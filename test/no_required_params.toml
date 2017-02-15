@@ -1,0 +1,7 @@
+[account]
+region = "ap-northeast-1"
+
+[sqs]
+
+[kicker]
+max_concurrent_num = 20
