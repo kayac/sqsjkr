@@ -17,7 +17,7 @@ install:
   - go get github.com/mitchellh/gox
 
 script:
-  - ce $PROJECT_ROOT && make test
+  - cd $PROJECT_ROOT && make test
 
 before_deploy:
   - cd $PROJECT_ROOT && make packages
