@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kayac/sqsjkr.svg?branch=master)](https://travis-ci.org/kayac/sqsjkr)
+
 # sqsjkr
 SQS Job Kicker is the simple worker to invoke command from SQS message
 
