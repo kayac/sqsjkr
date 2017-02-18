@@ -1,0 +1,33 @@
+language: go
+
+notifications:
+  email: false
+
+env:
+  global:
+    - PROJECT_ROOT=$HOME/gopath/src/github.com/kayac/sqsjkr
+
+go:
+  - 1.7.4
+  - 1.8
+
+install:
+  - cd $PROJECT_ROOT && make get-deps
+  - go get github.com/mitchellh/gox
+
+script:
+  - cd $PROJECT_ROOT && make test
+
+before_deploy:
+  - cd $PROJECT_ROOT && make packages
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file:
+    - pkg/*.{zip}
+  on:
+    tags: true
+    go: 1.7.4
