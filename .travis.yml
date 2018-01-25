@@ -8,8 +8,9 @@ env:
     - PROJECT_ROOT=$HOME/gopath/src/github.com/kayac/sqsjkr
 
 go:
-  - 1.7.4
-  - 1.8
+  - 1.8.x
+  - 1.9.x
+  - tip
 
 install:
   - cd $PROJECT_ROOT && make get-deps
@@ -30,4 +31,4 @@ deploy:
     - pkg/*.{zip}
   on:
     tags: true
-    go: 1.7.4
+    go: 1.9
