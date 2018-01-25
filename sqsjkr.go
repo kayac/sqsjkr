@@ -265,7 +265,7 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 		err := srv.Serve(l)
 		if err == http.ErrServerClosed {
 			logger.Infof("%s", err)
-		} else {
+		} else if err != nil {
 			logger.Logger.Fatal(err)
 		}
 	}()
