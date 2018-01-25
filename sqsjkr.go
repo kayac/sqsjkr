@@ -260,8 +260,14 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/stats/metrics", handler)
+	srv := &http.Server{Handler: mux}
 	go func() {
-		logger.Logger.Fatal(http.Serve(l, mux))
+		err := srv.Serve(l)
+		if err == http.ErrServerClosed {
+			logger.Infof("%s", err)
+		} else {
+			logger.Logger.Fatal(err)
+		}
 	}()
 
 	// init trap signals
@@ -307,7 +313,7 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 	}()
 
 	wg.Wait()
-	l.Close()
+	srv.Shutdown(ctx)
 	logger.Infof("stopped sqsjkr")
 
 	return nil
