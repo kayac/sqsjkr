@@ -28,7 +28,7 @@ var TooLargeStdOutBodyMsg = `{
     "abort_if_locked": false
 }`
 var LockUnlockMsg = `{
-    "command":        "sleep 1; echo -n 'hello'",
+    "command":        "sleep 1; /bin/echo -n 'hello'",
     "envs":           {"PATH":"/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin"},
     "life_time":      "1m",
     "event_id":       "test_event",

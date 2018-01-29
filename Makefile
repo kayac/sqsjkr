@@ -3,15 +3,18 @@ DATE:=$(shell date +%Y-%m-%dT%H:%M:%SZ)
 
 .PHONY: test get-deps install clean
 
-all: test build get-deps
+all: get-deps test build
 
 install:
 	cd cmd/sqsjkr && go build -ldflags "-X main.version=${GIT_VER} -X main.buildDate=${DATE}"
 	install cmd/sqsjkr/sqsjkr ${GOPATH}/bin
 
+dep-amd64:
+	wget -O ${GOPATH}/bin/dep https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64
+	chmod +x ${GOPATH}/bin/dep
+
 get-deps:
-	go get -t -d -v .
-	cd cmd/sqsjkr && go get -t -d -v .
+	dep ensure
 
 packages:
 	cd cmd/sqsjkr && gox -os="linux darwin" -arch="amd64" -output "../../pkg/{{.Dir}}-${GIT_VER}-{{.OS}}-{{.Arch}}" -gcflags "-trimpath=${GOPATH}" -ldflags "-w -s -X main.version=${GIT_VER} -X main.buildDate=${DATE}"
