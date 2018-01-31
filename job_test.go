@@ -1,7 +1,6 @@
 package sqsjkr
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
@@ -45,6 +44,7 @@ var AbortIfLockedMsg = `{
 }`
 
 var jobtestLocker lock.Locker
+var testTrigger = "./test/trigger_test.sh"
 
 func init() {
 	jobtestLocker = &TestLocker{
@@ -54,7 +54,7 @@ func init() {
 
 func TestExecute(t *testing.T) {
 	msg := initMsg()
-	job, err := NewJobForTest(msg)
+	job, err := NewJob(msg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -76,7 +76,7 @@ func TestExecute(t *testing.T) {
 
 func TestErrorExecuteWithWrongBody(t *testing.T) {
 	wmsg := buildMsg(`{"unknown": "unknown"}`)
-	job, err := NewJobForTest(wmsg)
+	job, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -89,7 +89,7 @@ func TestErrorExecuteWithWrongBody(t *testing.T) {
 
 func TestTooLargeStdOut(t *testing.T) {
 	wmsg := buildMsg(TooLargeStdOutBodyMsg)
-	job, err := NewJobForTest(wmsg)
+	job, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -106,7 +106,7 @@ func TestOverLifeTime(t *testing.T) {
 	sentTimestamp := strconv.Itoa(1270047600000)
 	msg.Attributes["SentTimestamp"] = &sentTimestamp
 
-	job, _ := NewJobForTest(msg)
+	job, _ := NewJob(msg, testTrigger)
 	_, err := job.Execute(jobtestLocker)
 
 	if err == nil {
@@ -130,8 +130,8 @@ func TestInvokeTrigger(t *testing.T) {
 
 func TestLockUnlockJob(t *testing.T) {
 	wmsg := buildMsg(LockUnlockMsg)
-	job1, err := NewJobForTest(wmsg)
-	job2, err := NewJobForTest(wmsg)
+	job1, err := NewJob(wmsg, testTrigger)
+	job2, err := NewJob(wmsg, testTrigger)
 
 	go job1.Execute(jobtestLocker)
 	time.Sleep(time.Second * 1)
@@ -148,8 +148,8 @@ func TestLockUnlockJob(t *testing.T) {
 
 func TestAbortIfLockedJob(t *testing.T) {
 	wmsg := buildMsg(AbortIfLockedMsg)
-	job1, err := NewJobForTest(wmsg)
-	job2, err := NewJobForTest(wmsg)
+	job1, err := NewJob(wmsg, testTrigger)
+	job2, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -190,33 +190,4 @@ func buildMsg(body string) *sqs.Message {
 	}
 
 	return msg
-}
-
-func NewJobForTest(msg *sqs.Message) (Job, error) {
-	var body MessageBody
-	if err := json.Unmarshal([]byte(*msg.Body), &body); err != nil {
-		return nil, err
-	}
-
-	sentTimestamp, err := strconv.ParseInt(*msg.Attributes["SentTimestamp"], 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	sentTime := time.Unix(sentTimestamp/1000, sentTimestamp%1000*int64(time.Millisecond))
-
-	trigger := "./test/trigger_test.sh"
-
-	dj := &DefaultJob{
-		jobID:         *msg.MessageId,
-		command:       body.Command,
-		environment:   body.Environments,
-		eventID:       body.EventID,
-		lockID:        body.LockID,
-		abortIfLocked: body.AbortIfLocked,
-		lifeTime:      body.LifeTime.Duration,
-		sentTimestamp: sentTime,
-		trigger:       trigger,
-	}
-
-	return dj, nil
 }
