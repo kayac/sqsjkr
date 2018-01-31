@@ -93,6 +93,7 @@ event\_id         | string            | job event uniq name (for example, AWS Cl
 life\_time        | integer or string | integer is fixed by second unit. string format requires unit name such as 'm', 's', and so on (e.g. 1s, 1m, 1h).
 lock\_id          | string            | locks another job
 abort\_if\_locked | bool              | if job is locked by lock\_id, new job give up without retry.
+disable\_life\_time\_trigger | bool   | disable lifetime trigger even though a job is over the lifetime (default false).
 
 - example:
 
