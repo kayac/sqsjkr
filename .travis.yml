@@ -9,7 +9,7 @@ env:
 
 go:
   - 1.8.x
-  - 1.9.x
+  - 1.9.2
   - tip
 
 install:
@@ -28,7 +28,7 @@ deploy:
   api_key: $GITHUB_TOKEN
   file_glob: true
   file:
-    - pkg/*.{zip}
+    - pkg/*
   on:
     tags: true
-    go: 1.9.x
+    go: 1.9.2
