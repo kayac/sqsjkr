@@ -1,8 +1,8 @@
 package sqsjkr
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -43,8 +43,17 @@ var AbortIfLockedMsg = `{
     "lock_id":        "lock3",
     "abort_if_locked": true
 }`
+var DisableLifeTimeTriggerMsg = `{
+    "command":        "sleep 1",
+    "envs":           {"PATH":"/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin"},
+    "life_time":      "1s",
+    "event_id":       "test_event",
+    "abort_if_locked": true,
+    "disable_life_time_trigger": true
+}`
 
 var jobtestLocker lock.Locker
+var testTrigger = "./test/trigger_test.sh"
 
 func init() {
 	jobtestLocker = &TestLocker{
@@ -54,7 +63,7 @@ func init() {
 
 func TestExecute(t *testing.T) {
 	msg := initMsg()
-	job, err := NewJobForTest(msg)
+	job, err := NewJob(msg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -76,7 +85,7 @@ func TestExecute(t *testing.T) {
 
 func TestErrorExecuteWithWrongBody(t *testing.T) {
 	wmsg := buildMsg(`{"unknown": "unknown"}`)
-	job, err := NewJobForTest(wmsg)
+	job, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -89,7 +98,7 @@ func TestErrorExecuteWithWrongBody(t *testing.T) {
 
 func TestTooLargeStdOut(t *testing.T) {
 	wmsg := buildMsg(TooLargeStdOutBodyMsg)
-	job, err := NewJobForTest(wmsg)
+	job, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -105,14 +114,18 @@ func TestOverLifeTime(t *testing.T) {
 	// set SentTimestamp 2010/4/1/ 00:00:00.00
 	sentTimestamp := strconv.Itoa(1270047600000)
 	msg.Attributes["SentTimestamp"] = &sentTimestamp
-
-	job, _ := NewJobForTest(msg)
+	filename := "test/.triggered"
+	defer os.Remove(filename)
+	job, _ := NewJob(msg, "touch "+filename)
 	_, err := job.Execute(jobtestLocker)
 
 	if err == nil {
 		t.Errorf("should not be error is nil")
 	} else if err != ErrOverLifeTime {
 		t.Errorf("should be error:%s. error=%s", ErrOverLifeTime, err.Error())
+	}
+	if _, err := os.Stat(filename); err != nil {
+		t.Errorf("%s must be exist", filename)
 	}
 }
 
@@ -130,8 +143,8 @@ func TestInvokeTrigger(t *testing.T) {
 
 func TestLockUnlockJob(t *testing.T) {
 	wmsg := buildMsg(LockUnlockMsg)
-	job1, err := NewJobForTest(wmsg)
-	job2, err := NewJobForTest(wmsg)
+	job1, err := NewJob(wmsg, testTrigger)
+	job2, err := NewJob(wmsg, testTrigger)
 
 	go job1.Execute(jobtestLocker)
 	time.Sleep(time.Second * 1)
@@ -148,8 +161,8 @@ func TestLockUnlockJob(t *testing.T) {
 
 func TestAbortIfLockedJob(t *testing.T) {
 	wmsg := buildMsg(AbortIfLockedMsg)
-	job1, err := NewJobForTest(wmsg)
-	job2, err := NewJobForTest(wmsg)
+	job1, err := NewJob(wmsg, testTrigger)
+	job2, err := NewJob(wmsg, testTrigger)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -167,6 +180,28 @@ func TestAbortIfLockedJob(t *testing.T) {
 
 	if endTime.Sub(startTime) >= JobRetryInterval {
 		t.Errorf("could not give up immediately.")
+	}
+}
+
+func TestDisableLifeTimeTriggerJob(t *testing.T) {
+	wmsg := buildMsg(DisableLifeTimeTriggerMsg)
+	filename := "test/.triggered"
+	defer os.Remove(filename)
+	job, err := NewJob(wmsg, "touch "+filename)
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+
+	time.Sleep(time.Second * 2)
+	b, err := job.Execute(jobtestLocker)
+	if err != ErrOverLifeTime {
+		t.Errorf("unexpected err: %s expected:ErrOverLifeTime", err)
+	}
+	if b != nil {
+		t.Errorf("unexpected result: %s expected:nil", b)
+	}
+	if stat, err := os.Stat(filename); err == nil {
+		t.Errorf("%s must not be exists: %#v", filename, stat)
 	}
 }
 
@@ -190,33 +225,4 @@ func buildMsg(body string) *sqs.Message {
 	}
 
 	return msg
-}
-
-func NewJobForTest(msg *sqs.Message) (Job, error) {
-	var body MessageBody
-	if err := json.Unmarshal([]byte(*msg.Body), &body); err != nil {
-		return nil, err
-	}
-
-	sentTimestamp, err := strconv.ParseInt(*msg.Attributes["SentTimestamp"], 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	sentTime := time.Unix(sentTimestamp/1000, sentTimestamp%1000*int64(time.Millisecond))
-
-	trigger := "./test/trigger_test.sh"
-
-	dj := &DefaultJob{
-		jobID:         *msg.MessageId,
-		command:       body.Command,
-		environment:   body.Environments,
-		eventID:       body.EventID,
-		lockID:        body.LockID,
-		abortIfLocked: body.AbortIfLocked,
-		lifeTime:      body.LifeTime.Duration,
-		sentTimestamp: sentTime,
-		trigger:       trigger,
-	}
-
-	return dj, nil
 }

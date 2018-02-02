@@ -57,18 +57,24 @@ type Job interface {
 
 // MessageBody for decoding json
 type MessageBody struct {
-	Command       string            `json:"command"`
-	Environments  map[string]string `json:"envs"`
-	EventID       string            `json:"event_id"`
-	LifeTime      Duration          `json:"life_time"`
-	LockID        string            `json:"lock_id"`
-	AbortIfLocked bool              `json:"abort_if_locked"`
+	Command                string            `json:"command"`
+	Environments           map[string]string `json:"envs"`
+	EventID                string            `json:"event_id"`
+	LifeTime               Duration          `json:"life_time"`
+	LockID                 string            `json:"lock_id"`
+	AbortIfLocked          bool              `json:"abort_if_locked"`
+	DisableLifeTimeTrigger bool              `json:"disable_life_time_trigger"`
 }
 
 // Execute executes command
 func (j *DefaultJob) Execute(lkr lock.Locker) ([]byte, error) {
 	// 1. Checks job's lifetime.
 	if j.isOverLifeTime() {
+		if j.trigger == "" {
+			// trigger is disabled or not defined
+			return nil, ErrOverLifeTime
+		}
+
 		msg := fmt.Sprintf("job_id:%s, event_id:%s, command:%s, life_time:%s, sent_timestamp:%s",
 			j.jobID, j.eventID, j.command, j.lifeTime.String(), j.sentTimestamp.String())
 
@@ -187,9 +193,10 @@ func NewJob(msg *sqs.Message, trigger string) (Job, error) {
 		abortIfLocked: body.AbortIfLocked,
 		lifeTime:      body.LifeTime.Duration,
 		sentTimestamp: sentTime,
-		trigger:       trigger,
 	}
-
+	if !body.DisableLifeTimeTrigger {
+		dj.trigger = trigger
+	}
 	return dj, nil
 }
 
