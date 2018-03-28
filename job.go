@@ -88,7 +88,7 @@ func (j *DefaultJob) Execute(lkr lock.Locker) ([]byte, error) {
 	}
 
 	// 2. Locks Job (if job's lockID have been locked already, retry to Execute() after 5sec).
-	if j.lockID != "" && lkr != nil {
+	if j.lockID != "" && j.eventID != "" && lkr != nil {
 		err := lkr.Lock(j.lockID, j.eventID)
 		if err != nil {
 			logger.Errorf(err.Error())
@@ -114,15 +114,12 @@ func (j *DefaultJob) Execute(lkr lock.Locker) ([]byte, error) {
 	cmd.Env = env
 	output, err := cmd.CombinedOutput()
 
-	// return if not set locker
-	if lkr == nil {
-		return output, err
-	}
-
 	// 5. Unlocks job.
-	if derr := lkr.Unlock(j.lockID); derr != nil {
-		// TODO: should implement notification
-		logger.Errorf(derr.Error())
+	if j.lockID != "" && lkr != nil {
+		if derr := lkr.Unlock(j.lockID); derr != nil {
+			// TODO: should implement notification
+			logger.Errorf(derr.Error())
+		}
 	}
 
 	return output, err
