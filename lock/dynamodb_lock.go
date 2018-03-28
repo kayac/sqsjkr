@@ -99,12 +99,19 @@ func (dl DynamodbLock) Unlock(lockID string) error {
 
 // NewDynamodbLock build DynamodbLock
 func NewDynamodbLock(profile, region, table string) Locker {
-	cred := credentials.NewSharedCredentials("", profile)
+	var conf *aws.Config
+	if profile != "" {
+		conf = &aws.Config{
+			Region:      aws.String(region),
+			Credentials: credentials.NewSharedCredentials("", profile),
+		}
+	} else {
+		conf = &aws.Config{
+			Region: aws.String(region),
+		}
+	}
 	// configure Dynamodb
-	ddb := dynamodb.New(session.New(), &aws.Config{
-		Region:      &region,
-		Credentials: cred,
-	})
+	ddb := dynamodb.New(session.New(), conf)
 	return DynamodbLock{
 		TableName: table,
 		dynamodb:  ddb,

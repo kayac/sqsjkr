@@ -150,13 +150,20 @@ func (dt *DynamodbThrottle) GetWriteCapacity() (int64, error) {
 
 // NewDynamodbThrottle build DynamodbThrottle
 func NewDynamodbThrottle(ctx context.Context, profile, region, table string, retention time.Duration) Throttler {
-	cred := credentials.NewSharedCredentials("", profile)
+	var conf *aws.Config
+	if profile != "" {
+		conf = &aws.Config{
+			Region:      aws.String(region),
+			Credentials: credentials.NewSharedCredentials("", profile),
+		}
+	} else {
+		conf = &aws.Config{
+			Region: aws.String(region),
+		}
+	}
 
 	// configure Dynamodb
-	ddb := dynamodb.New(session.New(), &aws.Config{
-		Region:      aws.String(region),
-		Credentials: cred,
-	})
+	ddb := dynamodb.New(session.New(), conf)
 
 	dt := &DynamodbThrottle{
 		TableName:       table,
