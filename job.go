@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -64,6 +65,12 @@ type MessageBody struct {
 	LockID                 string            `json:"lock_id"`
 	AbortIfLocked          bool              `json:"abort_if_locked"`
 	DisableLifeTimeTrigger bool              `json:"disable_life_time_trigger"`
+}
+
+func (m MessageBody) String() string {
+	var b strings.Builder
+	json.NewEncoder(&b).Encode(m)
+	return strings.TrimSuffix(b.String(), "\n")
 }
 
 // Execute executes command
@@ -170,16 +177,23 @@ func (j *DefaultJob) validate() error {
 func NewJob(msg *sqs.Message, trigger string) (Job, error) {
 	var body MessageBody
 	if err := json.Unmarshal([]byte(*msg.Body), &body); err != nil {
-		logger.Errorf("reason:%s", err.Error())
+		logger.Errorf("Cannot parse message body: %s", err.Error())
 		return nil, err
 	}
 
 	sentTimestamp, err := strconv.ParseInt(*msg.Attributes["SentTimestamp"], 10, 64)
-	sentTime := time.Unix(sentTimestamp/1000, sentTimestamp%1000*int64(time.Millisecond))
-
 	if err != nil {
+		logger.Errorf("Cannot parse attribute SentTimestamp: %s", err.Error())
 		return nil, err
 	}
+	sentTime := time.Unix(sentTimestamp/1000, sentTimestamp%1000*int64(time.Millisecond))
+
+	logger.Infof(
+		"new job by message id:%s body:%s sentTimestamp:%s",
+		*msg.MessageId,
+		body.String(),
+		sentTime,
+	)
 
 	dj := &DefaultJob{
 		jobID:         *msg.MessageId,

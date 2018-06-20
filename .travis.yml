@@ -8,8 +8,7 @@ env:
     - PROJECT_ROOT=$HOME/gopath/src/github.com/kayac/sqsjkr
 
 go:
-  - 1.8.x
-  - 1.9.2
+  - 1.10.x
   - tip
 
 install:
@@ -31,4 +30,4 @@ deploy:
     - pkg/*
   on:
     tags: true
-    go: 1.9.2
+    go: 1.10.3
