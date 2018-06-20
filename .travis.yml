@@ -30,4 +30,4 @@ deploy:
     - pkg/*
   on:
     tags: true
-    go: 1.10.3
+    go: 1.10.x
