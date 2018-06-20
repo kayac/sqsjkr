@@ -119,9 +119,9 @@ func (sjkr *DefaultSQSJkr) receiveMessage(ctx context.Context) error {
 			}
 
 			for _, msg := range resp.Messages {
-				logger.Infof("[msg_id:%s] body:%s, md5body:%s",
+				logger.Debugf("[msg_id:%s] body:%#v, md5body:%s",
 					*msg.MessageId, *msg.Body, *msg.MD5OfBody)
-				logger.Infof("[attributes] sender_id:%s, sent_time_stamp:%s, appx_1st_recv_time:%s, appx_recv_cnt:%s",
+				logger.Debugf("[attributes] sender_id:%s, sent_time_stamp:%s, appx_1st_recv_time:%s, appx_recv_cnt:%s",
 					*msg.Attributes["SenderId"],
 					*msg.Attributes["SentTimestamp"],
 					*msg.Attributes["ApproximateFirstReceiveTimestamp"],
