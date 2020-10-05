@@ -11,7 +11,7 @@ builds:
       - darwin
       - amd64
     ldflags:
-      - -w -s -X main.version=v{{.Version}} -X main.buildDate={{.Env.DATE}}
+      - -w -s -X main.version=v{{.Version}} -X main.buildDate={{.Date}}
     gcflags:
       - -trimpath={{.Env.HOME}}
 archives:
