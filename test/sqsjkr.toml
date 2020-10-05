@@ -1,12 +1,12 @@
 [account]
-profile = "test-profile"
 id = "12345678"
-region = "ap-northeast-1"
+profile = "test-profile"
+region = "{{ must_env `AWS_REGION` }}"
 
 [sqs]
 queue_name = "test_queue"
 
 [kicker]
-max_concurrent_num = 5
 life_time_trigger = "./test/trigger_test.sh"
+max_concurrent_num = 5
 stats_port = 8061
