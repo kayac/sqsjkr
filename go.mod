@@ -3,9 +3,8 @@ module github.com/kayac/sqsjkr
 go 1.15
 
 require (
-	github.com/aws/aws-sdk-go v1.12.67
+	github.com/aws/aws-sdk-go v1.35.2
 	github.com/go-ini/ini v1.32.0 // indirect
-	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kayac/go-config v0.5.0
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
