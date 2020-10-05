@@ -38,8 +38,8 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println("sqsjkr version: ", version)
-		fmt.Println("build date: ", buildDate)
+		fmt.Println("sqsjkr version:", version)
+		fmt.Println("build date:", buildDate)
 		fmt.Printf("Compiler: %s %s\n", runtime.Compiler, runtime.Version())
 		return
 	}
