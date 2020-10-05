@@ -1,9 +1,15 @@
 package sqsjkr
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	os.Setenv("AWS_REGION", "ap-northeast-1")
+	m.Run()
+}
 
 func TestLoadConfig(t *testing.T) {
 	expect := &Config{

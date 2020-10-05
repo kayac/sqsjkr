@@ -3,7 +3,7 @@ package sqsjkr
 import (
 	"fmt"
 
-	"github.com/BurntSushi/toml"
+	"github.com/kayac/go-config"
 )
 
 // Config is the sqsjkr config
@@ -91,7 +91,7 @@ func (c *Config) SetStatsSocket(sock string) error {
 // LoadConfig loads config file by config file path
 func LoadConfig(path string) (*Config, error) {
 	var conf Config
-	if _, err := toml.DecodeFile(path, &conf); err != nil {
+	if err := config.LoadWithEnvTOML(&conf, path); err != nil {
 		return nil, err
 	}
 
