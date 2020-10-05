@@ -1,20 +1,14 @@
 GIT_VER:=$(shell git describe --tags)
 DATE:=$(shell date +%Y-%m-%dT%H:%M:%SZ)
+export GO111MODULE := on
 
 .PHONY: test get-deps install clean
 
-all: get-deps test build
+all: test build
 
 install:
 	cd cmd/sqsjkr && go build -ldflags "-X main.version=${GIT_VER} -X main.buildDate=${DATE}"
 	install cmd/sqsjkr/sqsjkr ${GOPATH}/bin
-
-dep-amd64:
-	wget -O ${GOPATH}/bin/dep https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64
-	chmod +x ${GOPATH}/bin/dep
-
-get-deps:
-	dep ensure
 
 packages:
 	cd cmd/sqsjkr && gox -os="linux darwin" -arch="amd64" -output "../../pkg/{{.Dir}}-${GIT_VER}-{{.OS}}-{{.Arch}}" -gcflags "-trimpath=${GOPATH}" -ldflags "-w -s -X main.version=${GIT_VER} -X main.buildDate=${DATE}"
