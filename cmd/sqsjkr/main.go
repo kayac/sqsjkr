@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	_ "time/tzdata"
 
 	"github.com/kayac/sqsjkr"
 	"github.com/kayac/sqsjkr/lock"
