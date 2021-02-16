@@ -8,8 +8,10 @@ builds:
       - CGO_ENABLED=0
     main: ./cmd/sqsjkr/main.go
     goarch:
-      - darwin
       - amd64
+    goos:
+      - darwin
+      - linux
     ldflags:
       - -w -s -X main.version=v{{.Version}} -X main.buildDate={{.Date}}
     gcflags:
