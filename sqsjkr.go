@@ -52,6 +52,21 @@ type StatsItem struct {
 	BusyWorkerNum uint32 `json:"busy_worker"`
 }
 
+// Stats represents stats.
+type Stats struct {
+	Workers struct {
+		Busy int64 `json:"busy"`
+		Idle int64 `json:"idle"`
+	} `json:"workers"`
+	Invocations struct {
+		Succeeded int64 `json:"succeeded"`
+		Failed    int64 `json:"failed"`
+		Errored   int64 `json:"errored"`
+	} `json:"invocations"`
+
+	busy chan struct{}
+}
+
 // SQSJkr interfaces
 type SQSJkr interface {
 	Run(context.Context) error
@@ -224,19 +239,34 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 		return err
 	}
 
-	// handler
-	busy := make(chan struct{}, sjkr.Config().Kicker.MaxConcurrentNum)
-
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		busyNum := len(busy)
+	stats := &Stats{
+		busy: make(chan struct{}, sjkr.Config().Kicker.MaxConcurrentNum),
+	}
+	handlerV1 := func(w http.ResponseWriter, r *http.Request) {
+		busyNum := len(stats.busy)
 		mi := StatsItem{
-			IdleWorkerNum: uint32(cap(busy) - busyNum),
+			IdleWorkerNum: uint32(cap(stats.busy) - busyNum),
 			BusyWorkerNum: uint32(busyNum),
 		}
 
 		w.Header().Set("Content-type", ApplicationJSON)
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(mi); err != nil {
+			logger.Errorf(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+
+	handlerV2 := func(w http.ResponseWriter, r *http.Request) {
+		busyNum := len(stats.busy)
+		s := Stats{}
+		s.Workers.Idle = int64(cap(stats.busy) - busyNum)
+		s.Workers.Busy = int64(busyNum)
+		s.Invocations = stats.Invocations
+
+		w.Header().Set("Content-type", ApplicationJSON)
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(s); err != nil {
 			logger.Errorf(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -259,7 +289,9 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 		return err
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/stats/metrics", handler)
+	mux.HandleFunc("/stats/metrics/v2", handlerV2)
+	mux.HandleFunc("/stats/metrics", handlerV1)
+
 	srv := &http.Server{Handler: mux}
 	go func() {
 		err := srv.Serve(l)
@@ -298,7 +330,7 @@ func Run(ctx context.Context, sjkr SQSJkr, level string) error {
 	for i := 0; i < sjkr.Config().Kicker.MaxConcurrentNum; i++ {
 		wg.Add(1)
 		go func(wid int) {
-			SpawnWorker(sjkr, wid, sjkr.JobStream(), busy)
+			SpawnWorker(sjkr, wid, sjkr.JobStream(), stats)
 			wg.Done()
 		}(i)
 	}

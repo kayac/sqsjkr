@@ -147,3 +147,26 @@ myThr := NewMyThrottler() // Your Throttler
 sjkr.SetLocker(myThr)
 ```
 
+## Stats HTTP endpoint
+
+sqsjkr runs a HTTP server on port 8061 to get stats of myself.
+
+
+```console
+$ curl -s localhost:8061/stats/metrics/v2
+{
+  "workers": {
+    "busy": 4,
+    "idle": 6
+  },
+  "invocations": {
+    "succeeded": 10,
+    "failed": 2,
+    "errored": 3
+  }
+}
+```
+
+## LICENSE
+
+MIT
