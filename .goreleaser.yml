@@ -9,6 +9,7 @@ builds:
     main: ./cmd/sqsjkr/main.go
     goarch:
       - amd64
+      - arm64
     goos:
       - darwin
       - linux
