@@ -26,7 +26,7 @@ func SpawnWorker(sjkr SQSJkr, wid int, js <-chan Job, s *Stats) {
 		jobs:  js,
 		stats: s,
 	}
-	logger.Infof("[worker_id:%d]spawn worker.", wid)
+	logger.Infof("[worker_id:%d] spawn worker.", wid)
 
 	worker.ReceiveMessage()
 }
@@ -44,12 +44,12 @@ func (w Worker) ReceiveMessage() {
 		}
 
 		if err := w.executeJob(job); err != nil {
-			logger.Errorf("[worker_id:%d] %s", w.id, err.Error())
+			logger.Errorf("[worker_id:%d] execute job failed %s", w.id, err.Error())
 		}
 
 	}
 
-	logger.Infof("terminate %d worker", w.id)
+	logger.Infof("[worker_id:%d] terminating", w.id)
 	return
 }
 
@@ -67,11 +67,11 @@ func (w Worker) executeJob(job Job) error {
 	output, err := job.Execute(w.sjkr.Locker())
 	if err != nil && output == nil {
 		atomic.AddInt64(&w.stats.Invocations.Failed, 1)
-		logger.Errorf("[event:%s] failed to invoke command, reason: %s", job.EventID(), err.Error())
+		logger.Errorf("[event:%s] failed to invoke command, reason: %s, job: %s", job.EventID(), err.Error(), job.String())
 		return err
 	} else if err != nil {
 		atomic.AddInt64(&w.stats.Invocations.Errored, 1)
-		logger.Errorf("[event:%s] error when to invoke command, reason: %s", job.EventID(), err.Error())
+		logger.Errorf("[event:%s] errored to invoke command, reason: %s, job: %s", job.EventID(), err.Error(), job.String())
 		logger.Errorf(string(output))
 		return err
 	} else {

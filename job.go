@@ -48,12 +48,17 @@ type DefaultJob struct {
 	trigger       string
 }
 
+func (j *DefaultJob) String() string {
+	return fmt.Sprintf("%#v", j)
+}
+
 // Job is sqsjkr job struct
 type Job interface {
 	Execute(lock.Locker) ([]byte, error)
 	JobID() string
 	EventID() string
 	Command() string
+	String() string
 }
 
 // MessageBody for decoding json
@@ -207,6 +212,9 @@ func NewJob(msg *sqs.Message, trigger string) (Job, error) {
 	}
 	if !body.DisableLifeTimeTrigger {
 		dj.trigger = trigger
+	}
+	if dj.eventID == "" {
+		dj.eventID = *msg.MessageId
 	}
 	return dj, nil
 }
