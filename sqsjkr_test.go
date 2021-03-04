@@ -77,6 +77,10 @@ type TestJob struct {
 	jobID string
 }
 
+func (tj TestJob) String() string {
+	return tj.jobID
+}
+
 func (tj TestJob) Execute(locker lock.Locker) ([]byte, error) {
 	if tj.jobID == "job-duplicated" {
 		time.Sleep(time.Millisecond * 200)
